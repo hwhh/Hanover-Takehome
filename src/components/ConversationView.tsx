@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Box, Text, VStack } from '@chakra-ui/react';
 import { Conversation } from '../types';
 import SearchResults from './SearchResults';
@@ -8,6 +8,15 @@ interface ConversationViewProps {
 }
 
 const ConversationView: React.FC<ConversationViewProps> = ({ conversation }) => {
+    const bottomRef = useRef<HTMLDivElement>(null);
+
+
+    useEffect(() => {
+        if (bottomRef.current) {
+            bottomRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [conversation.messages]);
+
     return (
         <VStack align="stretch" spacing={4} p={4}>
             {conversation.messages.map((msg, index) => (
@@ -21,6 +30,7 @@ const ConversationView: React.FC<ConversationViewProps> = ({ conversation }) => 
                     )}
                 </Box>
             ))}
+            <div ref={bottomRef} />
         </VStack>
     );
 };

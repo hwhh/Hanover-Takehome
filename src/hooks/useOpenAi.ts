@@ -38,7 +38,7 @@ const useOpenAi = () => {
                 Authorization: `Bearer ${openAIApiKey}`,
             },
             body: JSON.stringify({
-                model: 'gpt-3.5-turbo', // or 'gpt-4' if available
+                model: 'gpt-4',
                 messages: [{ role: 'user', content: prompt }],
                 temperature: 0.7,
             }),

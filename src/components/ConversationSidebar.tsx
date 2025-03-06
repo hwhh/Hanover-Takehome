@@ -9,6 +9,7 @@ interface ConversationSidebarProps {
 }
 
 const ConversationSidebar: React.FC<ConversationSidebarProps> = ({ conversations, onSelect, onNewConversation }) => {
+
     return (
         <Box width="300px" bg="gray.100" p={4} overflowY="auto" borderRight="1px solid" borderColor="gray.200">
             <Button colorScheme="blue" width="100%" mb={4} onClick={onNewConversation}>

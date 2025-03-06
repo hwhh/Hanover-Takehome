@@ -1,79 +1,69 @@
-import React, { useState } from 'react';
+// src/App.tsx
+import React, {useCallback, useState} from 'react';
 import { Flex, Box, Spinner, Text } from '@chakra-ui/react';
 import SearchForm from './components/SearchForm';
 import ConversationSidebar from './components/ConversationSidebar';
+import ConversationView from './components/ConversationView';
 import useOpenAi from './hooks/useOpenAi';
-
 import useConversations from './hooks/useConversations';
 import useSerpAPI from "./hooks/useSerpAPI.ts";
-import ConversationView from "./components/ChatView.tsx";
+import {withTimeout} from "./utils/withTimeout.ts";
 
 const App: React.FC = () => {
-    const {
-        conversations,
-        currentConversation,
-        startNewConversation,
-        addMessageToCurrentConversation,
-        selectConversation,
-    } = useConversations();
+    const { conversations, currentConversation, sendMessage, selectConversation, startNewConversation } = useConversations();
     const { generateAiResponse } = useOpenAi();
     const { searchGoogle } = useSerpAPI();
     const [loading, setLoading] = useState<boolean>(false);
 
-    const handleSearch = async (query: string) => {
+    const handleSearch = useCallback(async (query: string) => {
         setLoading(true);
         try {
-            // Start a new conversation if none exists.
-            if (!currentConversation) {
-                startNewConversation();
-            }
             // Append the user's message.
-            addMessageToCurrentConversation({
+            sendMessage({
                 role: 'user',
                 content: query,
                 timestamp: Date.now(),
             });
 
-            // Perform the search using SerpAPI.
-            const results = await searchGoogle(query);
-            let aiAnswer = '';
+            const results = await withTimeout(searchGoogle(query), 20000).catch((err) => {
+                console.error("Search timed out or failed:", err);
+                return []; // fallback: empty search results
+            });
+
+            let aiAnswer = "";
             if (results.length === 0) {
-                aiAnswer = 'No search results found. Please refine your query.';
+                aiAnswer = "No search results found. Please refine your query.";
             } else {
-                aiAnswer = await generateAiResponse({
-                    query,
-                    searchResults: results,
+                aiAnswer = await withTimeout(generateAiResponse({ query, searchResults: results }), 20000).catch((err) => {
+                    console.error("AI response timed out or failed:", err);
+                    return "Partial response: AI service timed out.";
                 });
             }
 
-            // Append the assistant's message and include the search results.
-            addMessageToCurrentConversation({
+            sendMessage({
                 role: 'assistant',
                 content: aiAnswer,
                 timestamp: Date.now(),
-                searchResults: results, // <-- Store the search results!
+                searchResults: results,
             });
         } catch (error) {
-            console.error('Error during search:', error);
-            addMessageToCurrentConversation({
+            console.error("Error during search:", error);
+            sendMessage({
                 role: 'assistant',
-                content: 'There was an error processing your request. Please try again later.',
+                content: "There was an error processing your request. Please try again later.",
                 timestamp: Date.now(),
             });
         } finally {
             setLoading(false);
         }
-    };
-
+    }, [sendMessage, generateAiResponse, searchGoogle]);
     return (
         <Flex height="100vh">
-            {/* Left Sidebar */}
             <ConversationSidebar
                 conversations={conversations}
                 onSelect={(conv) => selectConversation(conv)}
                 onNewConversation={startNewConversation}
             />
-            {/* Main Conversation Area */}
             <Flex direction="column" flex="1" position="relative">
                 <Box flex="1" overflowY="auto" p={4}>
                     {currentConversation ? (
@@ -82,21 +72,13 @@ const App: React.FC = () => {
                         <Text>No conversation selected. Start a new chat from the sidebar.</Text>
                     )}
                     {loading && (
-                        <Flex alignItems="center" mt={4}>
+                        <Flex justifyContent="center" alignItems="center" mt={4}>
                             <Spinner mr={2} />
                             <Text>Processing your message...</Text>
                         </Flex>
                     )}
                 </Box>
-                {/* Constant Search Bar */}
-                <Box
-                    borderTop="1px solid"
-                    borderColor="gray.200"
-                    p={4}
-                    position="sticky"
-                    bottom={0}
-                    bg="white"
-                >
+                <Box borderTop="1px solid" borderColor="gray.200" p={4} position="sticky" bottom={0} bg="white">
                     <SearchForm onSubmit={handleSearch} loading={loading} />
                 </Box>
             </Flex>
