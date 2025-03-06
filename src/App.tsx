@@ -40,10 +40,7 @@ const App: React.FC = () => {
             if (results.length === 0) {
                 aiAnswer = "No search results found. Please refine your query.";
             } else {
-                aiAnswer = await withTimeout(generateAiResponse({ query, searchResults: results }), 200000).catch((err) => {
-                    console.error("AI response timed out or failed:", err);
-                    return "Partial response: AI service timed out.";
-                });
+                aiAnswer = await generateAiResponse({ query, searchResults: results });
             }
 
             sendMessage({
