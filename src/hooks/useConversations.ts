@@ -87,7 +87,21 @@ const useConversations = () => {
         setCurrentConversation(conv);
     };
 
-    return { conversations, currentConversation, sendMessage, selectConversation, startNewConversation };
+    const deleteConversation = (convId: string) => {
+        setConversations((prevConvs) => prevConvs.filter((conv) => conv.id !== convId));
+        if (currentConversation && currentConversation.id === convId) {
+            setCurrentConversation(null);
+        }
+    };
+
+    return {
+        conversations,
+        currentConversation,
+        sendMessage,
+        selectConversation,
+        startNewConversation,
+        deleteConversation,
+    };
 };
 
 export default useConversations;

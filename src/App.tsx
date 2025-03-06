@@ -10,8 +10,14 @@ import useSerpAPI from "./hooks/useSerpAPI.ts";
 import {withTimeout} from "./utils/withTimeout.ts";
 
 const App: React.FC = () => {
-    const { conversations, currentConversation, sendMessage, selectConversation, startNewConversation } = useConversations();
-    const { generateAiResponse } = useOpenAi();
+    const {
+        conversations,
+        currentConversation,
+        sendMessage,
+        selectConversation,
+        startNewConversation,
+        deleteConversation,
+    } = useConversations();    const { generateAiResponse } = useOpenAi();
     const { searchGoogle } = useSerpAPI();
     const [loading, setLoading] = useState<boolean>(false);
 
@@ -25,7 +31,7 @@ const App: React.FC = () => {
                 timestamp: Date.now(),
             });
 
-            const results = await withTimeout(searchGoogle(query), 20000).catch((err) => {
+            const results = await withTimeout(searchGoogle(query), 200000).catch((err) => {
                 console.error("Search timed out or failed:", err);
                 return []; // fallback: empty search results
             });
@@ -34,7 +40,7 @@ const App: React.FC = () => {
             if (results.length === 0) {
                 aiAnswer = "No search results found. Please refine your query.";
             } else {
-                aiAnswer = await withTimeout(generateAiResponse({ query, searchResults: results }), 20000).catch((err) => {
+                aiAnswer = await withTimeout(generateAiResponse({ query, searchResults: results }), 200000).catch((err) => {
                     console.error("AI response timed out or failed:", err);
                     return "Partial response: AI service timed out.";
                 });
@@ -63,6 +69,7 @@ const App: React.FC = () => {
                 conversations={conversations}
                 onSelect={(conv) => selectConversation(conv)}
                 onNewConversation={startNewConversation}
+                onDelete={deleteConversation}
             />
             <Flex direction="column" flex="1" position="relative">
                 <Box flex="1" overflowY="auto" p={4}>
